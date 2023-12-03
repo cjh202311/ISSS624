@@ -57,7 +57,7 @@ Two geospatial data will be used in this study, they are:
 
 ### **4.1 Importing Geospatial Data into R**
 
-The code chunk below uses `st_read()` function of **sf** package to import the planning subzones, which is a polygon feature data frame.
+Two geospatial data will be used in this exercise, they are:
 
 ```{r}
 busstop <- st_read(dsn = "data/geospatial",
@@ -219,8 +219,6 @@ mutate(grid_id = 1:length(lengths(area_honeycomb_grid)))
 ### 5.3 **Geospatial data wrangling**
 
 #### **5.3.1 Combining Busstop and Hexagon grid**
-
-Code chunk below populates the planning subzone code (i.e. SUBZONE_C) of mpsz sf data frame into busstop sf data frame.
 
 ```{r}
 honeycomb_grid <- st_intersection(busstop, honeycomb_grid_sf) %>%
@@ -459,9 +457,9 @@ tm_shape(origintrip_WKEP)+
 ```
 :::
 
-### **5.5** Uniform Legend values
-
 Looking at the four maps, different legend values result in different interpretations of passenger traffic density. This inconsistency can cause confusion when comparing data across maps, as each map uses a unique scale to represent trips, making it difficult to make direct comparisons or identify trends.
+
+### **5.5** Uniform Legend values
 
 Therefore, the use of uniform legend values across all maps allows for more direct and accurate comparisons and provides a clearer understanding of the spatial distribution of passenger travel densities and how they change over time or under different conditions.
 
@@ -570,9 +568,8 @@ tm_shape(origintrip_WKEP) +
 
 ```
 
-### 5.6 Analysis of Passenger Travel Patterns
+### 5.6 Geovisualisation Analysis
 
-::: panel-tabset
 #### **Weekdays Comparison (Morning vs. Afternoon Peak)**
 
 -   During the weekday morning peak, there is a notable concentration of passenger trips in the central and southern parts of Singapore, which aligns with the morning commute to CBD and other work-related destinations.
@@ -590,7 +587,6 @@ tm_shape(origintrip_WKEP) +
 -   When comparing the weekday peaks to the weekend/holiday peaks, it's clear that the weekday peaks show a greater intensity of trips, especially in the morning. This difference underscores the regular workday commute patterns.
 
 -   The weekend/holiday maps reflect a broader distribution of trips across Singapore, indicating a shift in travel destinations and possibly a more varied purpose behind the trips, such as recreation, personal errands, or tourism activities.
-:::
 
 ## **6 Local Indicators of Spatial Association (LISA) Analysis**
 

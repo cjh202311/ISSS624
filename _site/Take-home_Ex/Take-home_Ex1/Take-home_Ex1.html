@@ -226,7 +226,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#geospatial-data-wrangling" id="toc-geospatial-data-wrangling" class="nav-link" data-scroll-target="#geospatial-data-wrangling">5.3 <strong>Geospatial data wrangling</strong></a></li>
   <li><a href="#creating-interactive-map" id="toc-creating-interactive-map" class="nav-link" data-scroll-target="#creating-interactive-map"><strong>5.4 Creating interactive map</strong></a></li>
   <li><a href="#uniform-legend-values" id="toc-uniform-legend-values" class="nav-link" data-scroll-target="#uniform-legend-values"><strong>5.5</strong> Uniform Legend values</a></li>
-  <li><a href="#analysis-of-passenger-travel-patterns" id="toc-analysis-of-passenger-travel-patterns" class="nav-link" data-scroll-target="#analysis-of-passenger-travel-patterns">5.6 Analysis of Passenger Travel Patterns</a></li>
+  <li><a href="#geovisualisation-analysis" id="toc-geovisualisation-analysis" class="nav-link" data-scroll-target="#geovisualisation-analysis">5.6 Geovisualisation Analysis</a></li>
   </ul></li>
   <li><a href="#local-indicators-of-spatial-association-lisa-analysis" id="toc-local-indicators-of-spatial-association-lisa-analysis" class="nav-link" data-scroll-target="#local-indicators-of-spatial-association-lisa-analysis"><strong>6 Local Indicators of Spatial Association (LISA) Analysis</strong></a>
   <ul class="collapse">
@@ -325,7 +325,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="data-preparation"><strong>4 Data Preparation</strong></h2>
 <section id="importing-geospatial-data-into-r" class="level3">
 <h3 class="anchored" data-anchor-id="importing-geospatial-data-into-r"><strong>4.1 Importing Geospatial Data into R</strong></h3>
-<p>The code chunk below uses&nbsp;<code>st_read()</code>&nbsp;function of&nbsp;<strong>sf</strong>&nbsp;package to import the planning subzones, which is a polygon feature data frame.</p>
+<p>Two geospatial data will be used in this exercise, they are:</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -590,7 +590,6 @@ $ TOTAL_TRIPS         &lt;dbl&gt; 7, 2, 3, 10, 5, 4, 3, 22, 3, 3, 7, 1, 3, 1, 3,
 <h3 class="anchored" data-anchor-id="geospatial-data-wrangling">5.3 <strong>Geospatial data wrangling</strong></h3>
 <section id="combining-busstop-and-hexagon-grid" class="level4">
 <h4 class="anchored" data-anchor-id="combining-busstop-and-hexagon-grid"><strong>5.3.1 Combining Busstop and Hexagon grid</strong></h4>
-<p>Code chunk below populates the planning subzone code (i.e.&nbsp;SUBZONE_C) of mpsz sf data frame into busstop sf data frame.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -882,10 +881,10 @@ $ TOTAL_TRIPS         &lt;dbl&gt; 7, 2, 3, 10, 5, 4, 3, 22, 3, 3, 7, 1, 3, 1, 3,
 </div>
 </div>
 </div>
+<p>Looking at the four maps, different legend values result in different interpretations of passenger traffic density. This inconsistency can cause confusion when comparing data across maps, as each map uses a unique scale to represent trips, making it difficult to make direct comparisons or identify trends.</p>
 </section>
 <section id="uniform-legend-values" class="level3">
 <h3 class="anchored" data-anchor-id="uniform-legend-values"><strong>5.5</strong> Uniform Legend values</h3>
-<p>Looking at the four maps, different legend values result in different interpretations of passenger traffic density. This inconsistency can cause confusion when comparing data across maps, as each map uses a unique scale to represent trips, making it difficult to make direct comparisons or identify trends.</p>
 <p>Therefore, the use of uniform legend values across all maps allows for more direct and accurate comparisons and provides a clearer understanding of the spatial distribution of passenger travel densities and how they change over time or under different conditions.</p>
 <section id="weekday-morning-peak-3" class="level4">
 <h4 class="anchored" data-anchor-id="weekday-morning-peak-3"><strong>Weekday morning peak</strong></h4>
@@ -1012,31 +1011,29 @@ $ TOTAL_TRIPS         &lt;dbl&gt; 7, 2, 3, 10, 5, 4, 3, 22, 3, 3, 7, 1, 3, 1, 3,
 </div>
 </section>
 </section>
-<section id="analysis-of-passenger-travel-patterns" class="level3">
-<h3 class="anchored" data-anchor-id="analysis-of-passenger-travel-patterns">5.6 Analysis of Passenger Travel Patterns</h3>
-<div class="tabset-margin-container"></div><div class="panel-tabset">
-<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-4-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-1" role="tab" aria-controls="tabset-4-1" aria-selected="true"><strong>Weekdays Comparison (Morning vs.&nbsp;Afternoon Peak)</strong></a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-2" role="tab" aria-controls="tabset-4-2" aria-selected="false"><strong>Weekend Comparison (Morning vs.&nbsp;Evening Peak)</strong></a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-3" role="tab" aria-controls="tabset-4-3" aria-selected="false"><strong>Weekday vs.&nbsp;Weekend/Holiday Comparison</strong></a></li></ul>
-<div class="tab-content">
-<div id="tabset-4-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-4-1-tab">
+<section id="geovisualisation-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="geovisualisation-analysis">5.6 Geovisualisation Analysis</h3>
+<section id="weekdays-comparison-morning-vs.-afternoon-peak" class="level4">
+<h4 class="anchored" data-anchor-id="weekdays-comparison-morning-vs.-afternoon-peak"><strong>Weekdays Comparison (Morning vs.&nbsp;Afternoon Peak)</strong></h4>
 <ul>
 <li><p>During the weekday morning peak, there is a notable concentration of passenger trips in the central and southern parts of Singapore, which aligns with the morning commute to CBD and other work-related destinations.</p></li>
 <li><p>In the weekday afternoon peak, while there’s still a significant amount of trips in the central region, the spread appears wider, suggesting that people are leaving the CBD, potentially heading to residential areas or other non-work-related destinations as the workday ends.</p></li>
 </ul>
-</div>
-<div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
+</section>
+<section id="weekend-comparison-morning-vs.-evening-peak" class="level4">
+<h4 class="anchored" data-anchor-id="weekend-comparison-morning-vs.-evening-peak"><strong>Weekend Comparison (Morning vs.&nbsp;Evening Peak)</strong></h4>
 <ul>
 <li><p>On weekends and holidays, the morning peak shows a more dispersed pattern of trips and possibly related to leisure activities or errands that do not concentrate heavily in the CBD.</p></li>
 <li><p>The evening peak on weekends/holidays shows increased activity compared to the morning. This increase may be attributed to social outings, dining, and entertainment activities that are typical for weekend evenings.</p></li>
 </ul>
-</div>
-<div id="tabset-4-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-3-tab">
+</section>
+<section id="weekday-vs.-weekendholiday-comparison" class="level4">
+<h4 class="anchored" data-anchor-id="weekday-vs.-weekendholiday-comparison"><strong>Weekday vs.&nbsp;Weekend/Holiday Comparison</strong></h4>
 <ul>
 <li><p>When comparing the weekday peaks to the weekend/holiday peaks, it’s clear that the weekday peaks show a greater intensity of trips, especially in the morning. This difference underscores the regular workday commute patterns.</p></li>
 <li><p>The weekend/holiday maps reflect a broader distribution of trips across Singapore, indicating a shift in travel destinations and possibly a more varied purpose behind the trips, such as recreation, personal errands, or tourism activities.</p></li>
 </ul>
-</div>
-</div>
-</div>
+</section>
 </section>
 </section>
 <section id="local-indicators-of-spatial-association-lisa-analysis" class="level2">
