@@ -2,7 +2,7 @@
 title: "Take-home Exercise 2: Applied Spatial Interaction Models: A case study of Singapore public bus commuter flows"
 ---
 
-## Background
+## 1 Background
 
 What are the driving forces behind urban dwellers to weak up early in morning to commute from their home locations to their work places? What are the impact of removing a public bus service on the commuters reside along the corridor of the bus route? These and many other questions related to urban mobility are challenges faced by transport operators and urban managers.
 
@@ -11,3 +11,239 @@ To provide answer to this question, traditionally, commuters survey will be used
 As city-wide urban infrastructures such as public buses, mass rapid transits, public utilities and roads become digital, the data sets obtained can be used as a framework for tracking movement patterns through space and time. This is particularly true with the recent trend of massive deployment of pervasive computing technologies such as GPS on the vehicles and SMART cards used by public transport commuters.
 
 Unfortunately, this explosive growth of geospatially-referenced data has far outpaced the planner\'s ability to utilize and transform the data into insightful information thus creating an adverse impact on the return on the investment made to collect and manage this data.
+
+## **The Data**
+
+### **Open Government Data**
+
+For the purpose of this assignment, data from several open government sources will be used:
+
+-   *Passenger Volume by Origin Destination Bus Stops*, *Bus Stop Location*, *Train Station* and *Train Station Exit Point*, just to name a few of them, from [LTA DataMall](https://datamall.lta.gov.sg/content/datamall/en.html).
+
+-   *Master Plan 2019 Subzone Boundary*, *HDB Property Information*, *School Directory and Information* and other relevant data from [Data.gov.sg](https://beta.data.gov.sg/).
+
+-   *hexagon*, a [hexagon](https://desktop.arcgis.com/en/arcmap/latest/tools/spatial-statistics-toolbox/h-whyhexagons.htm) layer of 250m (this distance is the perpendicular distance between the centre of the hexagon and its edges.) should be used to replace the relative coarse and irregular Master Plan 2019 Planning Sub-zone GIS data set of URA.
+
+### **Specially collected data**
+
+-   *Business*, *entertn*, *F&B*, *FinServ*, *Leisure&Recreation* and *Retails* are geospatial data sets of the locations of business establishments, entertainments, food and beverage outlets, financial centres, leisure and recreation centres, retail and services stores/outlets I compiled for urban mobility study. They are available on in the geospatial folder to Take-home Exercise 2 data folder.
+
+-   HDB: This data set is the geocoded version of *HDB Property Information* data from data.gov. The data set is prepared using September 2021 data. If you want to prepare you own data by using the latest *HDB Property Information* provided on data.gov.sg, this [link](https://is415-msty.netlify.app/posts/2021-10-25-take-home-exercise-3/?panelset6=glimpse%28%29#geocoding-our-aspatial-data) provides a useful step-by-step guide.
+
+## **2 Getting Started**
+
+```{r}
+pacman::p_load(tmap, sf, DT, stplanr,   
+               performance, sp,
+               ggpubr, tidyverse)
+```
+
+## **3 Preparing the Flow Data**
+
+### **3.1 Importing the OD data**
+
+Firstly, we will import the *Passenger Volume by Origin Destination Bus Stops* data set downloaded from LTA DataMall by using `read_csv()` of **readr** package.
+
+```{r}
+#| code-fold: true
+odbus <- read_csv("data/aspatial/origin_destination_bus_202308.csv",show_col_types = FALSE)
+```
+
+Let use display the *odbus* tibble data table by using the code chunk below.
+
+```{r}
+glimpse(odbus)
+```
+
+A quick check of odbus tibble data frame shows that the values in OROGIN_PT_CODE and DESTINATON_PT_CODE are in numeric data type. Hence, the code chunk below is used to convert these data values into character data type.
+
+```{r}
+odbus$ORIGIN_PT_CODE <- as.factor(odbus$ORIGIN_PT_CODE)
+odbus$DESTINATION_PT_CODE <- as.factor(odbus$DESTINATION_PT_CODE) 
+```
+
+### **3.2 Extracting the study data**
+
+For this take home exercise, we will extract commuting flows on weekday and between 6 and 9 o\'clock.
+
+```{r}
+odbus6_9 <- odbus %>%
+  filter(DAY_TYPE == "WEEKDAY") %>%
+  filter(TIME_PER_HOUR >= 6 &
+           TIME_PER_HOUR <= 9) %>%
+  group_by(ORIGIN_PT_CODE,
+           DESTINATION_PT_CODE) %>%
+  summarise(TRIPS = sum(TOTAL_TRIPS))
+```
+
+Table below shows the content of odbus6_9
+
+```{r}
+datatable(odbus6_9)
+```
+
+## **4 Working with Geospatial Data**
+
+For the purpose of this exercise, three geospatial data will be used. They are:
+
+-   *Bus Stop Location* from LTA DataMall. It provides information about all the bus stops currently being serviced by buses, including the bus stop code (identifier) and location coordinates.
+
+-   MPSZ-2019: This data provides the sub-zone boundary of URA Master Plan 2019.
+
+-   *hexagon*, a [hexagon](https://desktop.arcgis.com/en/arcmap/latest/tools/spatial-statistics-toolbox/h-whyhexagons.htm) layer of 375m (this distance is the perpendicular distance between the centre of the hexagon and its edges.) should be used to replace the relative coarse and irregular Master Plan 2019 Planning Sub-zone GIS data set of URA.
+
+```{r}
+busstop <- st_read(dsn = "data/geospatial",
+                   layer = "BusStop") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+mpsz <- st_read(dsn = "data/geospatial",
+                   layer = "MPSZ-2019") %>%
+  st_transform(crs = 3414)
+```
+
+### 4.1Create **Hexagon grid (honeycomb)**
+
+```{r}
+area_honeycomb_grid = st_make_grid(busstop,cellsize = 750, what = "polygons", square = FALSE)
+
+honeycomb_grid_sf = st_sf(area_honeycomb_grid) %>%
+
+mutate(grid_id = 1:length(lengths(area_honeycomb_grid)))
+
+```
+
+## **5 Geospatial data wrangling**
+
+#### **5.1 Combining Busstop and Hexagon grid**
+
+```{r}
+honeycomb_grid <- st_intersection(busstop, honeycomb_grid_sf) %>%
+  select(BUS_STOP_N, grid_id) %>%
+  st_drop_geometry()
+```
+
+::: panel-tabset
+#### Weekday morning peak
+
+```{r}
+od_data <- left_join(odbus6_9, honeycomb_grid,
+                      by = c("ORIGIN_PT_CODE" = "BUS_STOP_N")) %>%
+  rename(ORIGIN_BS = ORIGIN_PT_CODE,
+         ORIGIN_SZ = grid_id,
+         DESTIN_BS = DESTINATION_PT_CODE)
+
+```
+
+Before continue, it is a good practice for us to check for duplicating records.
+
+```{r}
+duplicate <- od_data %>%
+  group_by_all() %>%
+  filter(n()>1) %>%
+  ungroup()
+```
+
+If duplicated records are found, the code chunk below will be used to retain the unique records.
+
+```{r}
+od_data <- unique(od_data)
+```
+
+```{r}
+od_data <- left_join(od_data, honeycomb_grid, 
+                           by = c("DESTIN_BS" = "BUS_STOP_N"))
+```
+
+Remove grid without value of 0
+
+```{r}
+od_data_filter = filter(od_data, TRIPS > 0)
+```
+
+```{r}
+od_data <- od_data_filter %>%
+  rename(DESTIN_SZ = grid_id) %>%
+  drop_na() %>%
+  group_by(ORIGIN_SZ, DESTIN_SZ) %>%
+  summarise(MORNING_PEAK = sum(TRIPS))
+```
+:::
+
+## 
+
+**6 Visualising Spatial Interaction**
+
+### **6.1 Removing intra-zonal flows**
+
+We will not plot the intra-zonal flows. The code chunk below will be used to remove intra-zonal flows.
+
+```{r}
+od_data1 <- od_data[od_data$ORIGIN_SZ!=od_data$DESTIN_SZ,]
+```
+
+```{r}
+flowLine <- od2line(flow = od_data1, 
+                    zones = honeycomb_grid_sf,
+                    zone_code = "grid_id")
+```
+
+::: panel-tabset
+#### Weekday morning peak
+
+```{r}
+BUS_WDMP <- left_join(odbus6_9 , honeycomb_grid,
+            by = c("ORIGIN_PT_CODE" = "BUS_STOP_N")) %>%
+  rename(ORIGIN_BS = ORIGIN_PT_CODE,
+         ORIGIN_SZ = grid_id) %>%
+  group_by(ORIGIN_SZ) %>%
+  summarise(TOT_TRIPS = sum(TRIPS))
+```
+
+Before continue, it is a good practice for us to check for duplicating records.
+
+```{r}
+duplicate <- BUS_WDMP %>%
+  group_by_all() %>%
+  filter(n()>1) %>%
+  ungroup()
+```
+
+If duplicated records are found, the code chunk below will be used to retain the unique records.
+
+```{r}
+BUS_WDMP <- unique(BUS_WDMP)
+```
+
+It will be a good practice to confirm if the duplicating records issue has been addressed fully.
+
+```{r}
+origintrip_WDMP <- left_join(honeycomb_grid_sf, 
+                           BUS_WDMP,
+                           by = c("grid_id" = "ORIGIN_SZ"))
+```
+
+Remove grid without value of 0
+
+```{r}
+origintrip_WDMP = filter(origintrip_WDMP, TOT_TRIPS > 0)
+```
+:::
+
+```{r}
+tmap_mode("view")
+tmap_options(check.and.fix = TRUE)
+tm_shape(origintrip_WDMP) +
+  tm_polygons() +
+flowLine %>%  
+  filter(MORNING_PEAK >= 5000) %>%
+tm_shape() +
+  
+  tm_lines(lwd = "MORNING_PEAK",
+           style = "quantile",
+           scale = c(0.1, 1, 3, 5, 7, 10),
+           n = 6,
+           alpha = 0.3)
+```
