@@ -1,5 +1,7 @@
 ---
 title: "In class Exercise 4: Preparing Spatial Interaction Modelling Variables"
+format: html
+editor: visual
 ---
 
 ## Overview
