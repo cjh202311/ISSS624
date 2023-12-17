@@ -1,0 +1,113 @@
+---
+title: "In class Exercise 5"
+---
+
+development version of \*\*spflow\*\* package
+
+```{r}
+devtools::install_github("lukeCe/spflow")
+```
+
+Next, will will load spflow and other Rpackages into R environment.
+
+```{r}
+#| eval: false
+pacman::load(tmap, sf, spdep, sp, Matrix,spflow, reshape2, knitr,tidyverse)
+```
+
+## Data Preparation
+
+Before we can calbrate Spatial Econometric lnteraction Models by using spflow package, threedata sets are required, They are:
+
+-   a spatial weights
+
+-   a tibble data_frame consists of the origins, destination, flows and distances between the origins and destination, and
+
+-   a tibble data frame consists of the explanatory variables.
+
+## Building the geographical area
+
+For the purpose of this study, URA Master Planning 2019 Planning Subzone GlS data will be used
+
+in the code chunk below, `MPSZ-2019` shapefile will be import into R environment as a sf tibbledata frame called *mpsz*.
+
+```{r}
+#| eval: false
+mpsz <- st_read(dsn = "data/geospatial",
+                   layer = "MPSZ-2019") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+#| eval: false
+busstop <- st_read(dsn = "data/geospatial",
+                   layer = "BusStop") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+#| eval: false
+mpsz$ 'BUSSTOP_COUNT'<- lengths(st_intersects(mpsz, busstop))
+```
+
+```{r}
+#| eval: false
+mpsz_busstop  <- mpsz %>%
+  filter(BUSSTOP_COUNT > 0) 
+mpsz_busstop
+```
+
+```{r}
+#| eval: false
+centroids <- suppressWarnings({
+  st_point_on_surface(st_geometry(mpsz_busstop))})
+
+mpsz_nb <- list(
+  "by_contiguity" = poly2nb(mpsz_busstop),
+  "by_distance"= dnearneigh(centroids,
+                            d1 = 0, d2 = 5000),
+  "by_knn" = knn2nb(knearneigh(centroids, 3))
+)
+```
+
+```{r}
+#| eval: false
+mpsz_nb <- read_rds("data/rds/mpsz_nb.rds")
+mpsz_flow <- read_rds("data/rds/mpsz_flow.rds")
+mpsz_var <- read_rds("data/rds/mpsz_var.rds")
+```
+
+```{r}
+#| eval: false
+mpsz_net_pairs <- spflow_network_pair(
+  id_orig_net = "sg",
+  id_dest_net = "sg",
+  pair_data = mpsz_flow,
+  orig_key_column = "ORIGIN_SZ",
+  dest_key_column = "DESTIN_SZ") 
+mpsz_net_pairs
+```
+
+```{r}
+#| eval: false
+mpsz_multi_net <- spflow_network_multi(mpsz_net,
+  mpsz_net_pairs)
+mpsz_multi_net
+```
+
+```{r}
+#| eval: false
+cor_formula <- log(1 + TRIPS) ~
+  BUSSTOP_COUNT +
+  AGE7_12 +
+  AGE13_24 +
+  AGE25_64 +
+  SCHOOL_COUNT +
+  BUSINESS_COUNT +
+  RETAILS_COUNT +
+  FINSERV_COUNT +
+  P_(log(DISTANCE + 1))
+
+cor_mat <- pair_cor(
+  
+```

@@ -1,20 +1,21 @@
 ---
 title: "Take-home Exercise 2: Applied Spatial Interaction Models: A case study of Singapore public bus commuter flows"
+date: "9 Dec 2023"
+date-modified: "last-modified"
+format: 
+  html:
+    code-fold: true
+    code-control: true
+    warning: false
 ---
 
 ## 1 Background
 
-What are the driving forces behind urban dwellers to weak up early in morning to commute from their home locations to their work places? What are the impact of removing a public bus service on the commuters reside along the corridor of the bus route? These and many other questions related to urban mobility are challenges faced by transport operators and urban managers.
+Urban commuters on the morning and traveling to work face complex mobility challenges, prompting questions about the impacts of public bus service removal along their routes. Traditional methods like commuter surveys are costly, time-consuming, and often result in outdated information. With the digitization of city-wide infrastructure and the widespread use of GPS on the vehicles and SMART cards in public transport, vast geospatial data sets are generated. However, the rapid growth of this data has overwhelmed planners, hindering their ability to transform it into meaningful insights and impacting the return on investment in data collection.
 
-To provide answer to this question, traditionally, commuters survey will be used. However, commuters survey is a very costly, time-consuming and laborous, not to mention that the survey data tend to take a long time to clean and analyse. As a result, it is not unusual, by the time the survey report was ready, most of the information already out-of-date!
+## **2 The Data**
 
-As city-wide urban infrastructures such as public buses, mass rapid transits, public utilities and roads become digital, the data sets obtained can be used as a framework for tracking movement patterns through space and time. This is particularly true with the recent trend of massive deployment of pervasive computing technologies such as GPS on the vehicles and SMART cards used by public transport commuters.
-
-Unfortunately, this explosive growth of geospatially-referenced data has far outpaced the planner\'s ability to utilize and transform the data into insightful information thus creating an adverse impact on the return on the investment made to collect and manage this data.
-
-## **The Data**
-
-### **Open Government Data**
+### **2.1 Open Government Data**
 
 For the purpose of this assignment, data from several open government sources will be used:
 
@@ -22,23 +23,48 @@ For the purpose of this assignment, data from several open government sources wi
 
 -   *Master Plan 2019 Subzone Boundary*, *HDB Property Information*, *School Directory and Information* and other relevant data from [Data.gov.sg](https://beta.data.gov.sg/).
 
--   *hexagon*, a [hexagon](https://desktop.arcgis.com/en/arcmap/latest/tools/spatial-statistics-toolbox/h-whyhexagons.htm) layer of 250m (this distance is the perpendicular distance between the centre of the hexagon and its edges.) should be used to replace the relative coarse and irregular Master Plan 2019 Planning Sub-zone GIS data set of URA.
+-   *hexagon*, a [hexagon](https://desktop.arcgis.com/en/arcmap/latest/tools/spatial-statistics-toolbox/h-whyhexagons.htm) layer of 375m (this distance is the perpendicular distance between the centre of the hexagon and its edges.) should be used to replace the relative coarse and irregular Master Plan 2019 Planning Sub-zone GIS data set of URA.
 
-### **Specially collected data**
+### **2.2 Specially collected data**
 
--   *Business*, *entertn*, *F&B*, *FinServ*, *Leisure&Recreation* and *Retails* are geospatial data sets of the locations of business establishments, entertainments, food and beverage outlets, financial centres, leisure and recreation centres, retail and services stores/outlets I compiled for urban mobility study. They are available on in the geospatial folder to Take-home Exercise 2 data folder.
+-   *Business*, *entertn*, *F&B*, *Leisure&Recreation* are geospatial data sets of the locations of business establishments, entertainments, food and beverage outlets, leisure and recreation centres compiled for case study of Singapore public bus commuter flows. They are available on in the geospatial folder to Take-home Exercise 2 data folder.
 
--   HDB: This data set is the geocoded version of *HDB Property Information* data from data.gov. The data set is prepared using September 2021 data. If you want to prepare you own data by using the latest *HDB Property Information* provided on data.gov.sg, this [link](https://is415-msty.netlify.app/posts/2021-10-25-take-home-exercise-3/?panelset6=glimpse%28%29#geocoding-our-aspatial-data) provides a useful step-by-step guide.
+-   HDB: This data set is the geocoded version of *HDB Property Information* data from data.gov. The data set is prepared using September 2021 data.
 
 ## **2 Getting Started**
+
+For the purpose of this study, 10 r packages will be used. They are:
+
+1.  **tmap** is a package for creating thematic maps. It provides a flexible and powerful framework for visualizing spatial data.
+
+2.  **sf** is an R package for simple features, which provides a standard way to encode spatial vector data.
+
+3.  **DT** is a package that extends the **`data.table`** package and provides functions to create interactive data tables in R Markdown documents and Shiny web applications.
+
+4.  **stplanr** is a package for sustainable transport planning. It offers functions for transport planning and modeling, particularly with spatial data.
+
+5.  **performance** package is often associated with the **`yardstick`** package and provides functions for model performance metrics, such as RMSE, MAE, etc.
+
+6.  **sp** is a package for handling and analyzing spatial data. It is one of the foundational packages for spatial data manipulation and analysis in R.
+
+7.  **ggpubr** is a package for creating beautiful and customizable ggplot2-based plots for publication.
+
+8.  **tidyverse** is a collection of R packages, including **`dplyr`**, **`ggplot2`**, **`tidyr`**, and others. It promotes a tidy data workflow and provides a consistent set of functions for data manipulation and visualization.
+
+9.  **corrplot** is a package for visualizing correlation matrices using colored plots. It helps in understanding the relationships between variables in a dataset.
+
+10. **yardstick** is a package for measuring model performance. It provides functions for computing various metrics, such as accuracy, precision, recall, and others.
+
+The code chunk below installs and loads the various packages.
 
 ```{r}
 pacman::p_load(tmap, sf, DT, stplanr,   
                performance, sp,
-               ggpubr, tidyverse)
+               ggpubr, tidyverse, corrplot,
+               yardstick)
 ```
 
-## **3 Preparing the Flow Data**
+## **3 Data Preparation**
 
 ### **3.1 Importing the OD data**
 
@@ -64,7 +90,7 @@ odbus$DESTINATION_PT_CODE <- as.factor(odbus$DESTINATION_PT_CODE)
 
 ### **3.2 Extracting the study data**
 
-For this take home exercise, we will extract commuting flows on weekday and between 6 and 9 o\'clock.
+For this take home exercise, we will extract commuting flows on weekday and between 6 and 9 o'clock.
 
 ```{r}
 odbus6_9 <- odbus %>%
@@ -79,6 +105,7 @@ odbus6_9 <- odbus %>%
 Table below shows the content of odbus6_9
 
 ```{r}
+#| code-fold: true
 datatable(odbus6_9)
 ```
 
@@ -92,41 +119,83 @@ For the purpose of this exercise, three geospatial data will be used. They are:
 
 -   *hexagon*, a [hexagon](https://desktop.arcgis.com/en/arcmap/latest/tools/spatial-statistics-toolbox/h-whyhexagons.htm) layer of 375m (this distance is the perpendicular distance between the centre of the hexagon and its edges.) should be used to replace the relative coarse and irregular Master Plan 2019 Planning Sub-zone GIS data set of URA.
 
+### **4.1 Importing geospatial data**
+
 ```{r}
+#| code-fold: true
 busstop <- st_read(dsn = "data/geospatial",
                    layer = "BusStop") %>%
   st_transform(crs = 3414)
 ```
 
+Let's take a look at the location of bus stops in Singapore:
+
 ```{r}
+#| code-fold: true
+plot(busstop['BUS_STOP_N'])
+```
+
+```{r}
+#| code-fold: true
 mpsz <- st_read(dsn = "data/geospatial",
                    layer = "MPSZ-2019") %>%
   st_transform(crs = 3414)
 ```
 
-### 4.1Create **Hexagon grid (honeycomb)**
+Let's take a look at the map of subzone in Singapore.
+
+```{r}
+#| code-fold: true
+plot(mpsz['SUBZONE_C'])
+```
+
+### 4.2 Create **Hexagon grid (honeycomb)**
+
+For this exercise purpose, we need to create an analytical hexagon data of 375m. (this distance is the perpendicular distance between the centre of the hexagon and its edges)
+
+The following code creates a hexagon grid, associates bus stops with hexagons, and filters out hexagons without any bus stops. The resulting *bs_num* data frame contains information about hexagons with at least one bus stop.
 
 ```{r}
 area_honeycomb_grid = st_make_grid(busstop,cellsize = 750, what = "polygons", square = FALSE)
 
 honeycomb_grid_sf = st_sf(area_honeycomb_grid) %>%
+  mutate(grid_id = 1:length(lengths(area_honeycomb_grid)))
+honeycomb_grid_sf$num_bs = lengths(st_intersects(honeycomb_grid_sf, busstop))
 
-mutate(grid_id = 1:length(lengths(area_honeycomb_grid)))
 
+bs_num = filter(honeycomb_grid_sf, num_bs > 0)
+```
+
+Let's take a look at the hexagon grid:
+
+```{r}
+#| code-fold: true
+tmap_mode("plot")
+tmap_options(check.and.fix = TRUE)
+tm_shape(mpsz) +
+  tm_borders(alpha=0.7,col = "white")+
+  tm_polygons("darkgrey") +
+tm_shape(bs_num) +
+  tm_fill("num_bs",alpha=0.8,palette = "Greens")+
+  tm_polygons()
 ```
 
 ## **5 Geospatial data wrangling**
 
-#### **5.1 Combining Busstop and Hexagon grid**
+### **5.1 Combining Busstop and Hexagon grid**
+
+After running this code, **`honeycomb_grid`** will be a data frame containing information about bus stops that fall within the hexagons, including the bus stop ID (**`BUS_STOP_N`**), the hexagon ID (**`grid_id`**), and the number of bus stops within that hexagon (**`num_bs`**).
 
 ```{r}
-honeycomb_grid <- st_intersection(busstop, honeycomb_grid_sf) %>%
-  select(BUS_STOP_N, grid_id) %>%
+honeycomb_grid <- st_intersection(busstop, bs_num) %>%
+  select(BUS_STOP_N, grid_id,num_bs) %>%
   st_drop_geometry()
+honeycomb_grid 
 ```
 
-::: panel-tabset
-#### Weekday morning peak
+### **5.2 Combine odbus6_9 with od_data** 
+
+For further visual operation, we need to combine a table contains the number of trips between pairs of origin and destination hexagons.
 
 ```{r}
 od_data <- left_join(odbus6_9, honeycomb_grid,
@@ -137,7 +206,7 @@ od_data <- left_join(odbus6_9, honeycomb_grid,
 
 ```
 
-Before continue, it is a good practice for us to check for duplicating records.
+Before continue, check for duplicating records.
 
 ```{r}
 duplicate <- od_data %>%
@@ -146,35 +215,33 @@ duplicate <- od_data %>%
   ungroup()
 ```
 
-If duplicated records are found, the code chunk below will be used to retain the unique records.
-
-```{r}
-od_data <- unique(od_data)
-```
+Another left join between *odbus6_9* and *honeycomb_grid* to get the *DESTIN_BS.*
 
 ```{r}
 od_data <- left_join(od_data, honeycomb_grid, 
-                           by = c("DESTIN_BS" = "BUS_STOP_N"))
+                           by = c("DESTIN_BS" = "BUS_STOP_N")) %>%
+  rename(DESTIN_SZ = grid_id)
 ```
 
-Remove grid without value of 0
+Before continue, check for duplicating records.
 
 ```{r}
-od_data_filter = filter(od_data, TRIPS > 0)
+duplicate <- od_data %>%
+  group_by_all() %>%
+  filter(n()>1) %>%
+  ungroup()
 ```
 
+Group by 'ORIGIN_GRID_ID' and 'DESTIN_GRID_ID' to create a new column 'MORNING_PEAK' representing the total number of trips between each pair of hexagons.
+
 ```{r}
-od_data <- od_data_filter %>%
-  rename(DESTIN_SZ = grid_id) %>%
+od_data <- od_data %>%
   drop_na() %>%
   group_by(ORIGIN_SZ, DESTIN_SZ) %>%
   summarise(MORNING_PEAK = sum(TRIPS))
 ```
-:::
 
-## 
-
-**6 Visualising Spatial Interaction**
+## **6 Visualising Spatial Interaction**
 
 ### **6.1 Removing intra-zonal flows**
 
@@ -184,66 +251,888 @@ We will not plot the intra-zonal flows. The code chunk below will be used to rem
 od_data1 <- od_data[od_data$ORIGIN_SZ!=od_data$DESTIN_SZ,]
 ```
 
+### **6.2 Create flowline**
+
 ```{r}
 flowLine <- od2line(flow = od_data1, 
-                    zones = honeycomb_grid_sf,
+                    zones = bs_num,
                     zone_code = "grid_id")
 ```
 
-::: panel-tabset
-#### Weekday morning peak
+### **6.3 Visualisation and Analysis**
 
 ```{r}
-BUS_WDMP <- left_join(odbus6_9 , honeycomb_grid,
-            by = c("ORIGIN_PT_CODE" = "BUS_STOP_N")) %>%
-  rename(ORIGIN_BS = ORIGIN_PT_CODE,
-         ORIGIN_SZ = grid_id) %>%
-  group_by(ORIGIN_SZ) %>%
-  summarise(TOT_TRIPS = sum(TRIPS))
+#| code-fold: true
+tmap_mode("plot")
+tmap_options(check.and.fix = TRUE)
+tm_shape(mpsz) +
+  tm_borders(alpha=0.7,col = "white")+
+  tm_polygons("darkgrey") +
+tm_shape(bs_num) +
+  tm_fill("num_bs",alpha=0.8,palette = "Greens")+
+  tm_polygons() +
+flowLine %>%  
+  filter(MORNING_PEAK >= 5000) %>%
+tm_shape() +
+  tm_lines(lwd = "MORNING_PEAK",
+           style = "quantile",
+           scale = c(0.3,3, 6, 9, 12, 18,21, 27),
+           n = 6,
+           alpha = 0.5,
+           col="yellow") +
+  tm_layout(main.title = 'OD Flow On Weekday Morning Peak hour' ,
+            main.title.position = "center",
+            main.title.size = 1,
+            main.title.fontface = 'bold') +
+  tm_compass(type="8star", size = 1) +
+  tm_scale_bar()
 ```
 
-Before continue, it is a good practice for us to check for duplicating records.
+In this map, we filtered out trips with a count less than 5000 for enhanced analysis. Thicker flowlines indicate a higher volume of trips, while the length of the flowlines represents the distance between each hexagon. Notably, we observe long lines from the northern to the eastern regions, which, upon referencing the Singapore subway map, suggests a lack of subway connections along that route. Additionally, thicker lines predominantly appear in darker-colored hexagons, indicating a positive correlation between the number of bus stations and trip volume.
 
 ```{r}
-duplicate <- BUS_WDMP %>%
+#| code-fold: true
+tmap_mode("plot")
+tmap_options(check.and.fix = TRUE)
+tm_shape(mpsz) +
+  tm_borders(alpha=0.7,col = "white")+
+  tm_polygons("darkgrey") +
+
+tm_shape(bs_num %>%
+  filter(num_bs <= 3)) +
+  tm_fill("num_bs",alpha=0.8,palette = "Greens")+
+  tm_polygons() +
+
+tm_shape(flowLine %>%  
+  filter(MORNING_PEAK >= 20000)) +
+  tm_lines(lwd = "MORNING_PEAK",
+           style = "quantile",
+           scale = c(0.3,3, 6, 9, 12, 18,21, 27),
+           n = 6,
+           alpha = 0.5,
+           col="yellow") +
+  tm_layout(main.title = 'OD Flow On Weekday Morning Peak hour' ,
+            main.title.position = "center",
+            main.title.size = 1,
+            main.title.fontface = 'bold') +
+  tm_compass(type="8star", size = 1) +
+  tm_scale_bar()
+
+```
+
+After filtering for bus stops with a count of 3 or fewer and trips exceeding 20000, we observe a significant reduction in the overlap between flow lines and hexagons. This confirms the earlier understanding of the relationship between bus stations and trip volume. However, notable overlaps persist in the northern part of Singapore. Given the geographical context, this is likely attributed to buses traveling between Malaysia and Singapore---routes with fewer stations but higher trip volumes.
+
+## **7 Assemble propulsive and attractiveness variables**
+
+::: panel:
+### **Business**
+
+```{r}
+business <- st_read(dsn = "data/geospatial",
+                   layer = "Business") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+bs_num$`BUSINESS_num`<- lengths(
+  st_intersects(
+    bs_num, business))
+```
+
+```{r}
+summary(bs_num$BUSINESS_num)
+```
+
+```{r}
+#| code-fold: true
+tmap_mode("plot")
+tmap_options(check.and.fix = TRUE)
+tm_shape(mpsz) +
+  tm_borders(alpha=0.7,col = "white")+
+  tm_polygons("darkgrey") +
+
+tm_shape(bs_num) +
+  tm_polygons(alpha=0.5, col = "darkgreen")+
+tm_shape(business) +
+  tm_dots(size = 0.05, col = "yellow") 
+```
+
+### **F&B**
+
+```{r}
+fb <- st_read(dsn = "data/geospatial",                    layer = "F&B") %>%   st_transform(crs = 3414)
+```
+
+```{r}
+bs_num$`FB_num`<- lengths(   
+  st_intersects(     
+    bs_num, fb))
+```
+
+```{r}
+summary(bs_num$FB_num)
+```
+
+```{r}
+#| code-fold: true
+tmap_mode("plot") 
+tmap_options(check.and.fix = TRUE) 
+tm_shape(mpsz) +   
+  tm_borders(alpha=0.7,col = "white")+   
+  tm_polygons("darkgrey") +  tm_shape(bs_num) +   
+  tm_polygons(alpha=0.5, col = "darkgreen")+ 
+  tm_shape(fb) +   
+  tm_dots(size = 0.05, col = "yellow") 
+```
+
+### **Leisure&Recreation**
+
+```{r}
+lr <- st_read(dsn = "data/geospatial",                    
+              layer = "Liesure&Recreation") %>%   
+  st_transform(crs = 3414)
+```
+
+```{r}
+bs_num$`lr_num`<- lengths(   
+  st_intersects(     
+    bs_num, lr))
+```
+
+```{r}
+summary(bs_num$lr_num)
+```
+
+```{r}
+#| code-fold: true
+tmap_mode("plot") 
+tmap_options(check.and.fix = TRUE) 
+tm_shape(mpsz) +   
+  tm_borders(alpha=0.7,col = "white")+   
+  tm_polygons("darkgrey") +  tm_shape(bs_num) +   
+  tm_polygons(alpha=0.5, col = "darkgreen")+ 
+  tm_shape(lr) +   
+  tm_dots(size = 0.05, col = "yellow") 
+```
+
+### **schools**
+
+```{r}
+schools <- read_csv("data/aspatial/schools.csv") %>%
+  rename(latitude = "results.LATITUDE",
+         longitude = "results.LONGITUDE")%>%
+  select(postal_code, school_name, latitude, longitude)
+```
+
+```{r}
+schools_sf <- st_as_sf(schools, 
+                       coords = c("longitude", "latitude"),
+                       crs=4326) %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+bs_num$`schools_num`<- lengths(   
+  st_intersects(     
+    bs_num, schools_sf))
+```
+
+```{r}
+summary(bs_num$schools_num)
+```
+
+```{r}
+#| code-fold: true
+tmap_mode("plot") 
+tmap_options(check.and.fix = TRUE) 
+tm_shape(mpsz) +   
+  tm_borders(alpha=0.7,col = "white")+   
+  tm_polygons("darkgrey") +  tm_shape(bs_num) +   
+  tm_polygons(alpha=0.5, col = "darkgreen")+ 
+  tm_shape(schools_sf) +   
+  tm_dots(size = 0.05, col = "yellow") 
+```
+
+### **HDB**
+
+```{r}
+hdb <- read_csv("data/aspatial/hdb.csv") %>%
+  rename(latitude = "lat",
+         longitude = "lng")
+  
+```
+
+```{r}
+hdb_sf <- st_as_sf(hdb, 
+                       coords = c("longitude", "latitude"),
+                       crs=4326) %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+bs_num$`hdb_num`<- lengths(   
+  st_intersects(     
+    bs_num, hdb_sf))
+```
+
+```{r}
+summary(bs_num$hdb_num)
+```
+
+```{r}
+#| code-fold: true
+tmap_mode("plot") 
+tmap_options(check.and.fix = TRUE) 
+tm_shape(mpsz) +   
+  tm_borders(alpha=0.7,col = "white")+   
+  tm_polygons("darkgrey") +  tm_shape(bs_num) +   
+  tm_polygons(alpha=0.5, col = "darkgreen")+ 
+  tm_shape(hdb_sf) +   
+  tm_dots(size = 0.05, col = "yellow") 
+```
+
+### **Entertainment**
+
+```{r}
+entertn <- st_read(dsn = "data/geospatial",
+                   layer = "entertn") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+bs_num$`entertn_num`<- lengths(
+  st_intersects(
+    bs_num, entertn))
+```
+
+```{r}
+summary(bs_num$entertn_num)
+```
+
+```{r}
+#| code-fold: true
+tmap_mode("plot")
+tmap_options(check.and.fix = TRUE)
+tm_shape(mpsz) +
+  tm_borders(alpha=0.7,col = "white")+
+  tm_polygons("darkgrey") +
+
+tm_shape(bs_num) +
+  tm_polygons(alpha=0.5, col = "darkgreen")+
+tm_shape(entertn) +
+  tm_dots(size = 0.05, col = "yellow") 
+```
+:::
+
+The data will be joined with :
+
+```{r}
+bs_num_tidy <- bs_num %>%
+  st_drop_geometry() %>%
+  select(grid_id, BUSINESS_num, FB_num, lr_num, schools_num,  hdb_num, entertn_num )
+```
+
+```{r}
+flow_data <- od_data1 %>%
+  left_join(bs_num_tidy,
+            by = c("DESTIN_SZ" = "grid_id"))
+```
+
+```{r}
+#| code-fold: true
+summary(flow_data)
+```
+
+We can see there are 0 values in *BUSINESS_num, FB_num, lr_num, schools_num, hdb_num, entertn_num.*
+
+The code chunk below will be used to replace zero values to 0.99 for the propulsive and attractiveness variables.
+
+```{r}
+flow_data$BUSINESS_num <- ifelse(
+  flow_data$BUSINESS_num == 0,
+  0.99, flow_data$BUSINESS_num)
+flow_data$FB_num <- ifelse(
+  flow_data$FB_num == 0,
+  0.99, flow_data$FB_num)
+flow_data$lr_num <- ifelse(
+  flow_data$lr_num == 0,
+  0.99, flow_data$lr_num)
+flow_data$schools_num <- ifelse(
+  flow_data$schools_num == 0,
+  0.99, flow_data$schools_num)
+flow_data$hdb_num <- ifelse(
+  flow_data$hdb_num == 0,
+  0.99, flow_data$hdb_num)
+flow_data$entertn_num<- ifelse(
+  flow_data$entertn_num == 0,
+  0.99, flow_data$entertn_num)
+```
+
+```{r}
+#| code-fold: true
+summary(flow_data)
+```
+
+Now, there is no zero values in our data.
+
+Next we will remove duplicate record:
+
+```{r}
+duplicate <- flow_data %>%
   group_by_all() %>%
   filter(n()>1) %>%
   ungroup()
 ```
 
-If duplicated records are found, the code chunk below will be used to retain the unique records.
-
 ```{r}
-BUS_WDMP <- unique(BUS_WDMP)
+flow_data <- unique(flow_data)
 ```
 
-It will be a good practice to confirm if the duplicating records issue has been addressed fully.
-
 ```{r}
-origintrip_WDMP <- left_join(honeycomb_grid_sf, 
-                           BUS_WDMP,
-                           by = c("grid_id" = "ORIGIN_SZ"))
+#| code-fold: true
+summary(flow_data)
 ```
 
-Remove grid without value of 0
+The following table is explanatory variables to be used in the Spatial Interaction Modelling:
+
+| No  | Explanatory Variables |
+|:---:|:---------------------:|
+|  1  |       Business        |
+|  2  |          F&B          |
+|  3  |  Leisure&Rrecreation  |
+|  4  |        schools        |
+|  5  |          HDB          |
+|  6  |     Entertainment     |
+
+## 8 Compute Distance Matrix
+
+### **8.1 Converting from sf data.table to SpatialPolygonsDataFrame**
+
+First [`as.Spatial()`](https://r-spatial.github.io/sf/reference/coerce-methods.html) will be used to convert bs_num from sf tibble data frame to SpatialPolygonsDataFrame of sp object as shown in the code chunk below. Computing distance matrix using sp than sf package.
 
 ```{r}
-origintrip_WDMP = filter(origintrip_WDMP, TOT_TRIPS > 0)
+bs_num_sp <- as(bs_num, "Spatial")
+
+```
+
+### **8.2 Computing the distance matrix**
+
+Next, [`spDists()`](https://www.rdocumentation.org/packages/sp/versions/2.1-1/topics/spDistsN1) of sp package will be used to compute the Euclidean distance between the centroids of the hexagonsn.
+
+The following code calculates the pairwise distances between the bus stations represented by **`bs_num_sp`**. The **`spDists`** function from the **`sp`** package is employed for this purpose. The distances are computed based on the spatial coordinates of the bus stations, and the result is stored in the variable **`dist`**. The parameter **`longlat = FALSE`** indicates that the distances should be computed in the native coordinate system (not considering latitude and longitude as spherical coordinates).
+
+```{r}
+dist <- spDists(bs_num_sp, 
+                longlat = FALSE)
+```
+
+```{r}
+head(dist, n=c(10, 10))
+```
+
+### **8.3 Labelling column and row heanders of a distance matrix**
+
+First, we will create a list sorted according to the the distance matrix by grid_id.
+
+```{r}
+grid_id_names <- bs_num$grid_id
+```
+
+Next we will attach `grid_id` to row and column for distance matrix matching ahead.
+
+```{r}
+colnames(dist) <- paste0(grid_id_names)
+rownames(dist) <- paste0(grid_id_names)
+```
+
+### **8.3 Pivoting distance value by Hexagon grid**
+
+We will pivot the distance matrix into a long table by using the row and column grid_id as show in the code chunk below.
+
+The **`melt`** operation reshapes the matrix into a long format.
+
+```{r}
+distPair <-  reshape2::melt(dist) %>%
+  rename(dist = value)
+head(distPair, 10)
+```
+
+### **8.4 Updating intra-zonal distances**
+
+First, we will select and find out the minimum value of the distance by using `summary()`.
+
+```{r}
+distPair %>%
+  filter(dist > 0) %>%
+  summary()
+```
+
+The minimum distance is about 750, indicating travelling to adjacent hexagon.
+
+Next, a constant distance value of 300 (middle to edge is 325) added into intra-zones distance.
+
+```{r}
+distPair$dist <- ifelse(distPair$dist == 0,
+                        300, distPair$dist)
+```
+
+The code chunk below will be used to check the result data.frame.
+
+```{r}
+
+distPair %>%   
+  summary()
+```
+
+The code chunk below is used to rename the origin and destination fields.
+
+```{r}
+distPair <- distPair %>%
+  rename(ORIGIN_GRID_ID = Var1,
+         DESTIN_GRID_ID = Var2)
+
+distPair %>% head()
+```
+
+```{r}
+glimpse(distPair)
+```
+
+## **9 Spatial Interaction Modelling**
+
+### **9.1 Preparing Flow Data**
+
+In general, we will calibrate separate Spatial Interaction Models for inter- and intra-zonal flows. we will focus our attention on inter-zonal flow. Hence, we need to exclude the intra-zonal flow from *flow_data*.
+
+First, two new columns called *FlowNoIntra* and *offset* will be created by using the code chunk below.
+
+```{r}
+flow_data$FlowNoIntra <- ifelse(
+  flow_data$ORIGIN_SZ == flow_data$DESTIN_SZ, 
+  0, flow_data$MORNING_PEAK)
+flow_data$offset <- ifelse(
+  flow_data$ORIGIN_SZ == flow_data$DESTIN_SZ, 
+  0.000001, 1)
+
+```
+
+Now, we need to combine flow data with distance value:
+
+```{r}
+flow_data$ORIGIN_SZ <- as.factor(flow_data$ORIGIN_SZ)
+flow_data$DESTIN_SZ <- as.factor(flow_data$DESTIN_SZ)
+distPair$ORIGIN_GRID_ID <- as.factor(distPair$ORIGIN_GRID_ID)
+distPair$DESTIN_GRID_ID <- as.factor(distPair$DESTIN_GRID_ID)
+```
+
+```{r}
+flow_data1 <- flow_data %>%
+  left_join (distPair,
+             by = c("ORIGIN_SZ" = "ORIGIN_GRID_ID",
+                    "DESTIN_SZ" = "DESTIN_GRID_ID"))
+```
+
+we need to remove duplicate:
+
+```{r}
+duplicate <- flow_data1 %>%
+  group_by_all() %>%
+  filter(n()>1) %>%
+  ungroup()
+```
+
+```{r}
+SIM_data <- unique(flow_data1)
+```
+
+According to the syntax used to derive values in *FlowNoIntra* field, all intra-zonal flow will be given a value of 0 or else the original flow values will be inserted.
+
+Next, inter-zonal flow will be selected from flow_data and save into a new output data.frame called *inter_zonal_flow* by using the code chunk below.
+
+```{r}
+inter_zonal_flow <- SIM_data %>%
+  filter(FlowNoIntra > 0)
+```
+
+```{r}
+summary(inter_zonal_flow)
+```
+
+### **9.2 Visualising the dependent variable**
+
+```{r}
+#| code-fold: true
+ggplot(data = inter_zonal_flow,
+       aes(x = MORNING_PEAK)) +
+  geom_histogram()
+
+```
+
+We can see that all 'MORNING_PEAK' values are all positive values and its distribution is highly skewed to the right side.
+
+Next, let us visualise the relation between the dependent variable and one of the key independent variable in Spatial Interaction Model, namely distance.
+
+```{r}
+#| code-fold: true
+ggplot(data = inter_zonal_flow,
+       aes(x = dist,
+           y = MORNING_PEAK)) +
+  geom_point() +
+  geom_smooth(method = lm)
+```
+
+Their relationship hardly resemble linear relationship.
+
+When we plot the scatter plot by using the log transformed version of both variables, we can see that their relationship is more resemble linear relationship.
+
+```{r}
+#| code-fold: true
+ggplot(data = inter_zonal_flow,
+       aes(x = log(dist),
+           y = log(MORNING_PEAK))) +
+  geom_point() +
+  geom_smooth(method = lm)
+```
+
+### **9.3 Correlation Analysis**
+
+Before I proceed to do SIM, I will determine if there are any correlations between the variables. Conducting a correlation analysis is vital as it reveals linear relationships between variables, aiding in the identification of associations. This process helps avoid multicollinearity issues, optimizing regression models by selecting pertinent variables.
+
+```{r}
+inter_zonal_flow$BUSINESS_num <- as.numeric(inter_zonal_flow$BUSINESS_num)
+
+inter_zonal_flow$FB_num<- as.numeric(inter_zonal_flow$FB_num)
+
+inter_zonal_flow$lr_num <- as.numeric(inter_zonal_flow$lr_num)
+
+inter_zonal_flow$schools_num <- as.numeric(inter_zonal_flow$schools_num)
+
+inter_zonal_flow$hdb_num <- as.numeric(inter_zonal_flow$hdb_num)
+
+inter_zonal_flow$entertn_num <- as.numeric(inter_zonal_flow$entertn_num)
+
+inter_zonal_flow$MORNING_PEAK<- as.numeric(inter_zonal_flow$MORNING_PEAK)
+```
+
+Now, we draw the correlation matrix:
+
+```{r}
+#| code-fold: true
+vars.cor <- cor(inter_zonal_flow[, 3:9])
+
+corrplot(
+  vars.cor,
+  method = "ellipse",
+  lower = "ellipse",
+  upper = "number",
+  tl.pos = "lt",
+  diag = FALSE, 
+  addCoef.col = "black",
+  tl.col = "black",
+  col = colorRampPalette(c("yellow", "white", "red"))(100) ,number.cex = 0.7
+)
+
+```
+
+The correlation analysis revealed a notable relationship between the variables "F&B" and "Leisure & Recreation" with a correlation coefficient exceeding 80%. This high correlation suggests a strong linear association between the two variables. As a result, it is advisable to retain only one of them in subsequent analyses to avoid issues of multicol-linearity.
+
+Therefore, we choose to remove "Leisure & Recreation" and remain "F&B". The following table is new explanatory variables to be used in the Spatial Interaction Modelling:
+
+| No  | Explanatory Variables |
+|:---:|:---------------------:|
+|  1  |       Business        |
+|  2  |          F&B          |
+|  3  |        schools        |
+|  4  |          HDB          |
+|  5  |     Entertainment     |
+
+### **9.4 Calibrating Spatial Interaction Models**
+
+#### **9.4.1 Unconstrained Spatial Interaction Model**
+
+::: panel
+##### **Unconstrained SIM**
+
+The code chunk used to calibrate to model is shown below:
+
+```{r}
+uncSIM <- glm(formula = MORNING_PEAK ~ 
+                log(BUSINESS_num) +
+                log(FB_num) +
+                log(schools_num) +
+                log(hdb_num) +
+                log(entertn_num)+
+                log(dist),
+              family = poisson(link = "log"),
+              data = inter_zonal_flow,
+              na.action = na.exclude)
+```
+
+##### R-squared
+
+the calculated R-squared is 0.12527437, indicating that the model accounts for approximately 12.53% of the variability in the observed **`MORNING_PEAK`**.
+
+```{r}
+#| code-fold: true
+CalcRSquared <- function(observed,estimated){
+  r <- cor(observed,estimated)
+  R2 <- r^2
+  R2
+}
+
+CalcRSquared(uncSIM$data$MORNING_PEAK, uncSIM$fitted.values)
+```
+
+##### Coefficients
+
+```{r}
+#| code-fold: true
+uncSIM$coefficients
+```
+
+##### Summary
+
+```{r}
+#| code-fold: true
+summary(uncSIM)
 ```
 :::
 
+#### **9.4.2 Origin Constrained Model**
+
+::: panel
+##### Origin Constrained SIM
+
+Code chunk below shows the calibration of the model by using [`glm()`](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/glm) of R and *flow_data*.
+
 ```{r}
-tmap_mode("view")
-tmap_options(check.and.fix = TRUE)
-tm_shape(origintrip_WDMP) +
-  tm_polygons() +
-flowLine %>%  
-  filter(MORNING_PEAK >= 5000) %>%
-tm_shape() +
-  
-  tm_lines(lwd = "MORNING_PEAK",
-           style = "quantile",
-           scale = c(0.1, 1, 3, 5, 7, 10),
-           n = 6,
-           alpha = 0.3)
+orcSIM <- glm(formula = MORNING_PEAK ~ 
+                ORIGIN_SZ +
+                log(BUSINESS_num) +
+                log(FB_num) +
+                
+                log(schools_num) +
+                log(hdb_num) +
+                log(entertn_num)+
+                log(dist) - 1,
+              family = poisson(link = "log"),
+              data = inter_zonal_flow,
+              na.action = na.exclude)
 ```
+
+##### R-squared
+
+the calculated R-squared is 0.2402228, indicating that the model accounts for approximately 24.02% of the variability in the observed **`MORNING_PEAK`**.
+
+```{r}
+#| code-fold: true
+CalcRSquared(orcSIM$data$MORNING_PEAK, orcSIM$fitted.values)
+```
+
+##### Coefficients
+
+```{r}
+#| code-fold: true
+orcSIM$coefficients[818:823]
+```
+
+##### Summary
+
+```{r}
+#| code-fold: true
+summary(orcSIM)
+```
+:::
+
+#### **9.4.3 Destin Constrained Model**
+
+::: panel
+##### Destin Constrained SIM
+
+The code chunk used to calibrate to model is shown below is the destination:
+
+```{r}
+decSIM  <- glm(formula = MORNING_PEAK ~ 
+                DESTIN_SZ +
+                log(BUSINESS_num) +
+                log(FB_num) +
+                
+                log(schools_num) +
+                log(hdb_num) +
+                log(entertn_num)+
+                log(dist)-1,
+              family = poisson(link = "log"),
+              data = inter_zonal_flow,
+              na.action = na.exclude)
+```
+
+##### R-squared
+
+the calculated R-squared is 0.3053515, indicating that the model accounts for approximately 30.54% of the variability in the observed **`MORNING_PEAK`**.
+
+```{r}
+#| code-fold: true
+CalcRSquared(decSIM$data$MORNING_PEAK, decSIM$fitted.values)
+```
+
+##### Coefficients
+
+```{r}
+#| code-fold: true
+decSIM$coefficients[820:825]
+```
+
+##### Summary
+
+```{r}
+#| code-fold: true
+options(max.print = 10000)
+summary(decSIM)
+```
+:::
+
+#### **9.4.4 Doubly constrained**
+
+::: panel
+##### Doubly constrained SIM
+
+```{r}
+dbcSIM <- glm(formula = MORNING_PEAK ~ ORIGIN_SZ + DESTIN_SZ + log(dist), family = poisson(link = "log"), data = inter_zonal_flow, na.action = na.exclude)
+```
+
+##### R-squared
+
+the calculated R-squared is 0.5871965, indicating that the model accounts for approximately 58.72% of the variability in the observed **`MORNING_PEAK`**.
+
+```{r}
+#| code-fold: true
+CalcRSquared(dbcSIM$data$MORNING_PEAK, dbcSIM$fitted.values)
+```
+
+##### Coefficients
+
+```{r}
+#| code-fold: true
+dbcSIM$coefficients[1]
+dbcSIM$coefficients[1635]
+```
+
+##### Summary
+
+```{r}
+#| code-fold: true
+options(max.print = 10000)
+summary(dbcSIM)
+```
+:::
+
+In the **Destin Constrained Model**, the coefficients for five variables are all NA (Not Available), meaning that suitable coefficient values could not be calculated during the model fitting process. The specific cause requires further examination
+
+For the purpose of model comparison, we decided to exclude Destin Constrained Model. This ensures that, for a reliable comparison of model performance, the comparison is based on reliable estimates, avoiding the influence of variables with coefficients that could not be computed.
+
+## 9 Model Comparison
+
+First of all, let us create a list called *model_list* by using the code chunk below. It contains all our fitted models for all four variations of gravity model.
+
+```{r}
+model_list <- list(
+  Unconstrained = uncSIM,
+  Origin_Constrained = orcSIM,
+  Doubly_Constrained = dbcSIM)
+```
+
+Next, we will compute the RMSE of all the models in *model_list* file by using the code chunk below.
+
+The RMSE values provide a measure of the goodness of fit for each model. A lower RMSE indicates better model performance in terms of how well the model predictions align with the observed values. In this comparison, the Doubly Constrained Model has the lowest RMSE (1219.291), suggesting that it performs better in terms of minimizing prediction errors compared to the Unconstrained and Origin Constrained models.
+
+```{r}
+compare_performance(model_list,
+                    metrics = "RMSE")
+```
+
+### 9.1 Visualising the fitted values
+
+We will do a plot to visualise the observed values and the fitted values.
+
+Firstly we will extract the fitted values from each model by using the code chunk below.
+
+```{r}
+df <- as.data.frame(uncSIM$fitted.values) %>%
+  round(digits = 0)
+```
+
+Next, we will join the values to *SIM_data* data frame:
+
+```{r}
+inter_zonal_flow <- inter_zonal_flow %>%
+  cbind(df) %>%
+  rename(uncTRIPS = "uncSIM$fitted.values")
+```
+
+Repeat the same step by for Origin Constrained SIM:
+
+```{r}
+df <- as.data.frame(orcSIM$fitted.values) %>%
+  round(digits = 0)
+```
+
+```{r}
+inter_zonal_flow <- inter_zonal_flow %>%
+  cbind(df) %>%
+  rename(orcTRIPS = "orcSIM$fitted.values")
+```
+
+Repeat the same step by for Doubly Constrained SIM:
+
+```{r}
+df<- as.data.frame(dbcSIM$fitted.values) %>%   
+  round(digits = 0)
+```
+
+```{r}
+inter_zonal_flow <- inter_zonal_flow %>%
+  cbind(df) %>%
+  rename(dbcTRIPS = "dbcSIM$fitted.values")
+
+```
+
+We will create scatter plots displaying the relationship between actual and predicted values through linear fitting and compare each other.
+
+```{r}
+#| code-fold: true
+unc_p <- ggplot(data = inter_zonal_flow,
+                aes(x = uncTRIPS,
+                    y = MORNING_PEAK)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  coord_cartesian(xlim=c(0,100000),
+                  ylim=c(0,100000))
+
+orc_p <- ggplot(data = inter_zonal_flow,
+                aes(x = orcTRIPS,
+                    y = MORNING_PEAK)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  coord_cartesian(xlim=c(0,100000),
+                  ylim=c(0,100000))
+
+dbc_p <- ggplot(data = inter_zonal_flow,
+                aes(x = dbcTRIPS,
+                    y = MORNING_PEAK)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  coord_cartesian(xlim=c(0,100000),
+                  ylim=c(0,100000))
+
+ggarrange( unc_p, orc_p, dbc_p,
+          ncol = 2,
+          nrow = 2)
+```
+
+The results indicate that for the Doubly Constrained Model, the scatter plot points closely follow the fitted curve. This tight distribution suggests strong linear correlation between the actual values and the model predictions. The model appears to accurately capture the variation trends in the actual values, making it well-suited for describing underlying relationships.
+
+## 10 Conclusion 
+
+In the comparison of three spatial interaction models (UNC, ORC, DBC), insights are provided through the examination of R-squared values. Specifically, the DBC model stands out with an R-squared value of 59%, signifying superior explanatory power among the considered models. Additionally, the comparison of Root Mean Square Error (RMSE) reveals that the DBC model has the lowest RMSE at 1219.291. This implies that the DBC model demonstrates the least average deviation in predictions compared to observed values, showcasing higher predictive accuracy.
+
+According to the UNC and ORC models, the p-values of all the variables are very small (\<0.05) , indicating that their contributions in the models are highly statistically significant. Considering both models, *Entertainment* consistently emerges as the variable with the most significant positive impact, followed by *School* and *HDB*. *Distance* consistently exhibits the most significant negative impact in both the UNC and ORC models.
