@@ -4,7 +4,6 @@ date: "9 Dec 2023"
 date-modified: "last-modified"
 format: 
   html:
-    code-fold: true
     code-control: true
     warning: false
 ---
@@ -122,7 +121,7 @@ For the purpose of this exercise, three geospatial data will be used. They are:
 ### **4.1 Importing geospatial data**
 
 ```{r}
-#| code-fold: true
+
 busstop <- st_read(dsn = "data/geospatial",
                    layer = "BusStop") %>%
   st_transform(crs = 3414)
@@ -131,12 +130,12 @@ busstop <- st_read(dsn = "data/geospatial",
 Let's take a look at the location of bus stops in Singapore:
 
 ```{r}
-#| code-fold: true
+
 plot(busstop['BUS_STOP_N'])
 ```
 
 ```{r}
-#| code-fold: true
+
 mpsz <- st_read(dsn = "data/geospatial",
                    layer = "MPSZ-2019") %>%
   st_transform(crs = 3414)
@@ -190,10 +189,9 @@ After running this code, **`honeycomb_grid`** will be a data frame containing in
 honeycomb_grid <- st_intersection(busstop, bs_num) %>%
   select(BUS_STOP_N, grid_id,num_bs) %>%
   st_drop_geometry()
-honeycomb_grid 
 ```
 
-### **5.2 Combine odbus6_9 with od_data** 
+### **5.2 Combine odbus6_9 with od_data**
 
 For further visual operation, we need to combine a table contains the number of trips between pairs of origin and destination hexagons.
 
@@ -324,8 +322,9 @@ After filtering for bus stops with a count of 3 or fewer and trips exceeding 200
 
 ## **7 Assemble propulsive and attractiveness variables**
 
-::: panel:
-### **Business**
+
+::: panel-tabset
+## Business
 
 ```{r}
 business <- st_read(dsn = "data/geospatial",
@@ -357,7 +356,7 @@ tm_shape(business) +
   tm_dots(size = 0.05, col = "yellow") 
 ```
 
-### **F&B**
+## F&B
 
 ```{r}
 fb <- st_read(dsn = "data/geospatial",                    layer = "F&B") %>%   st_transform(crs = 3414)
@@ -385,7 +384,7 @@ tm_shape(mpsz) +
   tm_dots(size = 0.05, col = "yellow") 
 ```
 
-### **Leisure&Recreation**
+## Leisure&Recreation
 
 ```{r}
 lr <- st_read(dsn = "data/geospatial",                    
@@ -415,7 +414,7 @@ tm_shape(mpsz) +
   tm_dots(size = 0.05, col = "yellow") 
 ```
 
-### **schools**
+## schools
 
 ```{r}
 schools <- read_csv("data/aspatial/schools.csv") %>%
@@ -453,7 +452,7 @@ tm_shape(mpsz) +
   tm_dots(size = 0.05, col = "yellow") 
 ```
 
-### **HDB**
+## HDB
 
 ```{r}
 hdb <- read_csv("data/aspatial/hdb.csv") %>%
@@ -491,7 +490,7 @@ tm_shape(mpsz) +
   tm_dots(size = 0.05, col = "yellow") 
 ```
 
-### **Entertainment**
+## Entertainment
 
 ```{r}
 entertn <- st_read(dsn = "data/geospatial",
@@ -764,7 +763,8 @@ summary(inter_zonal_flow)
 #| code-fold: true
 ggplot(data = inter_zonal_flow,
        aes(x = MORNING_PEAK)) +
-  geom_histogram()
+  geom_histogram(fill="darkgreen")+
+  theme_minimal()
 
 ```
 
@@ -777,8 +777,9 @@ Next, let us visualise the relation between the dependent variable and one of th
 ggplot(data = inter_zonal_flow,
        aes(x = dist,
            y = MORNING_PEAK)) +
-  geom_point() +
-  geom_smooth(method = lm)
+  geom_point(color = "darkgreen") +
+  geom_smooth(method = lm, color = "yellow") +
+  theme_minimal()
 ```
 
 Their relationship hardly resemble linear relationship.
@@ -790,8 +791,9 @@ When we plot the scatter plot by using the log transformed version of both varia
 ggplot(data = inter_zonal_flow,
        aes(x = log(dist),
            y = log(MORNING_PEAK))) +
-  geom_point() +
-  geom_smooth(method = lm)
+  geom_point(color = "darkgreen") +
+  geom_smooth(method = lm, color = "yellow")+
+  theme_minimal()
 ```
 
 ### **9.3 Correlation Analysis**
@@ -829,7 +831,7 @@ corrplot(
   diag = FALSE, 
   addCoef.col = "black",
   tl.col = "black",
-  col = colorRampPalette(c("yellow", "white", "red"))(100) ,number.cex = 0.7
+  col = colorRampPalette(c("yellow", "white","lightgreen"))(100) ,number.cex = 0.7
 )
 
 ```
@@ -850,8 +852,8 @@ Therefore, we choose to remove "Leisure & Recreation" and remain "F&B". The foll
 
 #### **9.4.1 Unconstrained Spatial Interaction Model**
 
-::: panel
-##### **Unconstrained SIM**
+::: panel-tabset
+## Unconstrained SIM
 
 The code chunk used to calibrate to model is shown below:
 
@@ -868,7 +870,7 @@ uncSIM <- glm(formula = MORNING_PEAK ~
               na.action = na.exclude)
 ```
 
-##### R-squared
+## R-squared
 
 the calculated R-squared is 0.12527437, indicating that the model accounts for approximately 12.53% of the variability in the observed **`MORNING_PEAK`**.
 
@@ -883,14 +885,14 @@ CalcRSquared <- function(observed,estimated){
 CalcRSquared(uncSIM$data$MORNING_PEAK, uncSIM$fitted.values)
 ```
 
-##### Coefficients
+## Coefficients
 
 ```{r}
 #| code-fold: true
 uncSIM$coefficients
 ```
 
-##### Summary
+## Summary
 
 ```{r}
 #| code-fold: true
@@ -900,8 +902,8 @@ summary(uncSIM)
 
 #### **9.4.2 Origin Constrained Model**
 
-::: panel
-##### Origin Constrained SIM
+::: panel-tabset
+## Origin Constrained SIM
 
 Code chunk below shows the calibration of the model by using [`glm()`](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/glm) of R and *flow_data*.
 
@@ -920,7 +922,7 @@ orcSIM <- glm(formula = MORNING_PEAK ~
               na.action = na.exclude)
 ```
 
-##### R-squared
+## R-squared
 
 the calculated R-squared is 0.2402228, indicating that the model accounts for approximately 24.02% of the variability in the observed **`MORNING_PEAK`**.
 
@@ -929,14 +931,14 @@ the calculated R-squared is 0.2402228, indicating that the model accounts for ap
 CalcRSquared(orcSIM$data$MORNING_PEAK, orcSIM$fitted.values)
 ```
 
-##### Coefficients
+## Coefficients
 
 ```{r}
 #| code-fold: true
 orcSIM$coefficients[818:823]
 ```
 
-##### Summary
+## Summary
 
 ```{r}
 #| code-fold: true
@@ -946,8 +948,8 @@ summary(orcSIM)
 
 #### **9.4.3 Destin Constrained Model**
 
-::: panel
-##### Destin Constrained SIM
+::: panel-tabset
+## Destin Constrained SIM
 
 The code chunk used to calibrate to model is shown below is the destination:
 
@@ -966,7 +968,7 @@ decSIM  <- glm(formula = MORNING_PEAK ~
               na.action = na.exclude)
 ```
 
-##### R-squared
+## R-squared
 
 the calculated R-squared is 0.3053515, indicating that the model accounts for approximately 30.54% of the variability in the observed **`MORNING_PEAK`**.
 
@@ -975,14 +977,14 @@ the calculated R-squared is 0.3053515, indicating that the model accounts for ap
 CalcRSquared(decSIM$data$MORNING_PEAK, decSIM$fitted.values)
 ```
 
-##### Coefficients
+## Coefficients
 
 ```{r}
 #| code-fold: true
 decSIM$coefficients[820:825]
 ```
 
-##### Summary
+## Summary
 
 ```{r}
 #| code-fold: true
@@ -993,14 +995,14 @@ summary(decSIM)
 
 #### **9.4.4 Doubly constrained**
 
-::: panel
-##### Doubly constrained SIM
+::: panel-tabset
+## Doubly constrained SIM
 
 ```{r}
 dbcSIM <- glm(formula = MORNING_PEAK ~ ORIGIN_SZ + DESTIN_SZ + log(dist), family = poisson(link = "log"), data = inter_zonal_flow, na.action = na.exclude)
 ```
 
-##### R-squared
+## R-squared
 
 the calculated R-squared is 0.5871965, indicating that the model accounts for approximately 58.72% of the variability in the observed **`MORNING_PEAK`**.
 
@@ -1009,7 +1011,7 @@ the calculated R-squared is 0.5871965, indicating that the model accounts for ap
 CalcRSquared(dbcSIM$data$MORNING_PEAK, dbcSIM$fitted.values)
 ```
 
-##### Coefficients
+## Coefficients
 
 ```{r}
 #| code-fold: true
@@ -1017,7 +1019,7 @@ dbcSIM$coefficients[1]
 dbcSIM$coefficients[1635]
 ```
 
-##### Summary
+## Summary
 
 ```{r}
 #| code-fold: true
@@ -1103,24 +1105,27 @@ We will create scatter plots displaying the relationship between actual and pred
 unc_p <- ggplot(data = inter_zonal_flow,
                 aes(x = uncTRIPS,
                     y = MORNING_PEAK)) +
-  geom_point() +
-  geom_smooth(method = lm) +
+  geom_point(color = "darkgreen") +
+  geom_smooth(method = lm, color = "yellow") +
+  theme_minimal()
   coord_cartesian(xlim=c(0,100000),
                   ylim=c(0,100000))
 
 orc_p <- ggplot(data = inter_zonal_flow,
                 aes(x = orcTRIPS,
                     y = MORNING_PEAK)) +
-  geom_point() +
-  geom_smooth(method = lm) +
+  geom_point(color = "darkgreen") +
+  geom_smooth(method = lm, color = "yellow") +
+  theme_minimal()+
   coord_cartesian(xlim=c(0,100000),
                   ylim=c(0,100000))
 
 dbc_p <- ggplot(data = inter_zonal_flow,
                 aes(x = dbcTRIPS,
                     y = MORNING_PEAK)) +
-  geom_point() +
-  geom_smooth(method = lm) +
+  geom_point(color = "darkgreen") +
+  geom_smooth(method = lm, color = "yellow") +
+  theme_minimal()+
   coord_cartesian(xlim=c(0,100000),
                   ylim=c(0,100000))
 
@@ -1131,7 +1136,7 @@ ggarrange( unc_p, orc_p, dbc_p,
 
 The results indicate that for the Doubly Constrained Model, the scatter plot points closely follow the fitted curve. This tight distribution suggests strong linear correlation between the actual values and the model predictions. The model appears to accurately capture the variation trends in the actual values, making it well-suited for describing underlying relationships.
 
-## 10 Conclusion 
+## 10 Conclusion
 
 In the comparison of three spatial interaction models (UNC, ORC, DBC), insights are provided through the examination of R-squared values. Specifically, the DBC model stands out with an R-squared value of 59%, signifying superior explanatory power among the considered models. Additionally, the comparison of Root Mean Square Error (RMSE) reveals that the DBC model has the lowest RMSE at 1219.291. This implies that the DBC model demonstrates the least average deviation in predictions compared to observed values, showcasing higher predictive accuracy.
 
